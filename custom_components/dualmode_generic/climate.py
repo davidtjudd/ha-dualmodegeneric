@@ -443,15 +443,36 @@ class DualModeGenericThermostat(ClimateEntity, RestoreEntity):
     def preset_modes(self):
         """Return a list of available preset modes or PRESET_NONE if _away_temp is undefined."""
         return [PRESET_NONE, PRESET_AWAY] if self._away_temp else PRESET_NONE
-
+        
+    # def set_fan_mode(self, fan_mode):
+    #     """Set the fan mode.  Valid values are "on" or "auto"."""
+    #     if fan_mode.lower() not in (FAN_MODE_ON, FAN_MODE_AUTO):
+    #         error = "Invalid fan_mode value:  Valid values are 'on' or 'auto'"
+    #         _LOGGER.error(error)
+    #         return
+    #     self._fan_mode = fan_mode
+    #     # if fan_mode == FAN_MODE_ON:
+    #     #     await self._async_fan_turn_on()
+    #     # else:
+    #     #     if not self._is_device_active:
+    #     #         await self._async_fan_turn_off()
+    #     _LOGGER.info("Setting fan mode to: %s", fan_mode)
+        
     async def async_set_fan_mode(self, fan_mode) -> None:
         """Set new target fan mode."""
+        if fan_mode.lower() not in (FAN_MODE_ON, FAN_MODE_AUTO):
+            error = "Invalid fan_mode value:  Valid values are 'on' or 'auto'"
+            _LOGGER.error(error)
+            return
         self._fan_mode = fan_mode
         if fan_mode == FAN_MODE_ON:
             await self._async_fan_turn_on()
+        elif not self._is_device_active:
+            await self._async_fan_turn_off()
         else:
-            if not self._is_device_active:
-                await self._async_fan_turn_off()
+            _LOGGER.info("Fan set to auto and will turn off after current cycle completes.")
+        _LOGGER.info("Setting fan mode to: %s", fan_mode)
+        self.async_write_ha_state()
         return
 
     async def async_set_hvac_mode(self, hvac_mode):
